@@ -1,14 +1,23 @@
 package ro.sda.javaro35.finalProject.dto;
 
-import lombok.Data;
-import ro.sda.javaro35.finalProject.enums.UserRol;
+import lombok.Getter;
+import lombok.Setter;
+import ro.sda.javaro35.finalProject.entities.Address;
+import ro.sda.javaro35.finalProject.entities.cartNoders.Orders;
 
-@Data
+import java.util.List;
+
+@Getter
+@Setter
 public class UserDto {
 
-    Long id;
-    String userName;
-    String password;
-    String email;
-    UserRol rol;
+    private Long id;
+    private String name;
+    private String email;
+    private List<Orders> orderList;
+    private String password;
+    private List<Address> addressList;
+    private String thumbnail;
+    private String roles;
+
 }

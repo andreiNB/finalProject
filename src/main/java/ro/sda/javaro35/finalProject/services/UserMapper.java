@@ -18,10 +18,10 @@ public class UserMapper implements Mapper<User, UserDto> {
     public UserDto convertToDto(User entity) {
         UserDto userDto = new UserDto();
         userDto.setId(entity.getId());
-        userDto.setUserName(entity.getUserName());
+        userDto.setName(entity.getName());
         userDto.setPassword(entity.getPassword());
         userDto.setEmail(entity.getEmail());
-        userDto.setRol(entity.getRol());
+        userDto.setRoles(entity.getRoles());
         return userDto;
     }
 
@@ -34,10 +34,10 @@ public class UserMapper implements Mapper<User, UserDto> {
             user = new User();
         }
         user.setId(dto.getId());
-        user.setUserName(dto.getUserName());
+        user.setName(dto.getName());
         user.setPassword(dto.getPassword());
         user.setEmail(dto.getEmail());
-        user.setRol(dto.getRol());
+        user.setRoles(dto.getRoles());
         return user;
     }
 }

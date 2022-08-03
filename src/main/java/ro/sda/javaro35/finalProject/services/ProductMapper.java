@@ -1,9 +1,11 @@
 package ro.sda.javaro35.finalProject.services;
 
+import org.springframework.stereotype.Service;
 import ro.sda.javaro35.finalProject.dto.ProductDto;
 import ro.sda.javaro35.finalProject.entities.Product;
 import ro.sda.javaro35.finalProject.repository.ProductRepository;
 
+@Service
 public class ProductMapper implements Mapper<Product,ProductDto>{
 
     private final ProductRepository productRepository;

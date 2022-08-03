@@ -1,43 +1,118 @@
 package ro.sda.javaro35.finalProject.services;
 
+import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ro.sda.javaro35.finalProject.dto.UserDto;
 import ro.sda.javaro35.finalProject.entities.User;
+import ro.sda.javaro35.finalProject.exceptions.ResourceAlreadyExistsException;
 import ro.sda.javaro35.finalProject.repository.UserRepository;
 
-import javax.persistence.EntityNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
 
+import static lombok.AccessLevel.PRIVATE;
+
+@FieldDefaults(level = PRIVATE)
 @Service
-public class UserService {
+@AllArgsConstructor
+public class UserService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    static final Logger log = LoggerFactory.getLogger(UserService.class);
+    UserMapper userMapper;
+    final UserRepository userRepository;
 
-    private final UserMapper userMapper;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
-
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
+    @Autowired
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.userMapper = userMapper;
     }
 
-    public List<User> findAll() {
+    //Used by Spring Security to identify and pass and UserDetails to its classes
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmailIgnoreCase(email);
+        if (user == null) {
+            throw new UsernameNotFoundException("Invalid username or password.");
+        }
+        List roles = new ArrayList();
+        String role = "ROLE_" + user.getRoles();
+        roles.add(new SimpleGrantedAuthority(role));
+        return new org.springframework.security.core.userdetails.User(user.getEmail(),
+                user.getPassword(), roles);
+    }
+
+    // create
+
+    public void save(UserDto user) {
+        log.info("saving user {}", user.getName());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getRoles() == null) {
+            user.setRoles("USER");
+        }
+        User userEntity = userMapper.convertToEntity(user);
+        userRepository.save(userEntity);
+    }
+    // find all
+
+    public List<User> getAll() {
+        log.info("finding all users");
         return userRepository.findAll();
     }
+    // find by id
 
-    public void createUser(UserDto dto) {
-        User user = userMapper.convertToEntity(dto);
-        userRepository.save(user);
+    public User findById(Long id) {
+        log.info("finding by id");
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("user not found"));
+    }
+    // update
+
+    public void update(Long userId, UserDto userDto) {
+        log.info("update user {}", userDto);
+
+        userRepository.findById(userId)
+                .map(existingUser -> updateEntity(userDto, existingUser))
+                .map(updatedUser -> userRepository.save(updatedUser))
+                .orElseThrow(() -> new RuntimeException("user not found"));
     }
 
-    public UserDto findById(long id) {
-
-        User entityUser = userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(String.format("User not found")));
-        return userMapper.convertToDto(entityUser);
+    private User updateEntity(UserDto userDto, User existingUser) {
+        existingUser.setName(userDto.getName());
+        existingUser.setEmail(userDto.getEmail());
+        existingUser.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        existingUser.setRoles(userDto.getRoles());
+        return existingUser;
     }
 
-    public void deleteById(long id){
-        userRepository.findById(id).orElseThrow(()-> new EntityNotFoundException(String.format("User not found")));
+    public void updateNew(User user) {
+        log.info("update user {}", user);
+
+        String name = user.getName();
+        userRepository.findByNameIgnoreCase(name)
+                .filter(existingUser -> existingUser.getId().equals(user.getId()))
+                .map(existingUser -> userRepository.save(user))
+                .orElseThrow(() -> {
+                    log.error("user with name {} already exists", name);
+                    throw new ResourceAlreadyExistsException("user with name " + name + " already exists");
+                });
+    }
+    // delete
+
+    @Transactional
+    public void delete(Long id) {
+        log.info("deleting by id");
+        userRepository.deleteById(id);
     }
 }

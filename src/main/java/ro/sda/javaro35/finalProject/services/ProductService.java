@@ -1,6 +1,5 @@
 package ro.sda.javaro35.finalProject.services;
 
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import ro.sda.javaro35.finalProject.dto.ProductDto;
 import ro.sda.javaro35.finalProject.entities.Product;
@@ -11,12 +10,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
 public class ProductService {
 
     private ProductRepository productRepository;
 
     private ProductMapper productMapper;
+
+    public ProductService(ProductRepository productRepository, ProductMapper productMapper) {
+        this.productRepository = productRepository;
+        this.productMapper = productMapper;
+    }
 
     public List<ProductDto> getAllProducts() {
 
